@@ -1,12 +1,12 @@
 # vim-opium
-Rewrite of https://github.com/bounceme/opium.vim
+Rewrite of https://github.com/bounceme/poppy.vim
 Mostly to have highlighting for bash:
 - if - fi
 - for - done
 - while - done
 - case - esac
 
-After developing this i hoped the opium contained some opium....
+After developing this i hoped the poppy contained some opium....
 
 Enabled with autocmds ( :h autocommand )
 
