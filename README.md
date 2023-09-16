@@ -58,6 +58,6 @@ Add this to your .vimrc:
 let opium_pairs_lang_specific["lang_name"] : {
 \ "pair1_start": "pair1_end",
 \ "pair2_start": "pair2_end",
-}
+\ }
 ```
 Not that lang_name must be the filetype that vim identifies (see :h filetype)
