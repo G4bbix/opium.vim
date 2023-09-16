@@ -54,10 +54,10 @@ function s:endpart(last_line)
 		let s:opening_word = expand('<cword>')
 	endif
 	" Prevent test alias for [ to not highlight
-	 if s:opening_word ==# 'test' && getline('.')[col('.')-1] ==# '['
-		 let s:opening_word = '['
-	 endif
-	 if has_key(g:opium_pairs, s:opening_word)
+	if s:opening_word ==# 'test' && getline('.')[col('.')-1] ==# '['
+		let s:opening_word = '['
+	endif
+	if has_key(g:opium_pairs, s:opening_word)
 		let opening_pos = [line('.'), col('.')]
 
 		if len(s:opening_word) ==# 1
@@ -77,13 +77,8 @@ function s:endpart(last_line)
 		endwhile
 
 		if p[0] && (line2byte(p[0]) + p[1] > line2byte(s:pos[0]) + s:pos[1] || get(g:,'opium_point_enable') && p == s:pos)
-			if s:opening_word ==# '\V['
-				let s:closing_len = 1
-				let s:opening_len = 1
-			else
-				let s:opening_len = len(s:opening_word)
-				let s:closing_len = len(substitute(g:opium_pairs[s:opening_word], '\\<\([a-z]\+\)\\>', '\1', 'g'))
-			endif
+			let s:opening_len = len(s:opening_word)
+			let s:closing_len = len(substitute(g:opium_pairs[s:opening_word], '\\<\([a-z]\+\)\\>', '\1', 'g'))
 			let opening_matchaddPosArgs = opening_pos
 			call insert(opening_matchaddPosArgs, s:opening_len, 2)
 			call insert(p, s:closing_len, 2)
