@@ -1,15 +1,29 @@
 if !has('reltime') || exists('*OpiumInit')
 	finish
 endif
+
+let g:opium_pairs_setup = 1
 let g:opiumhigh = get(g:, 'opiumhigh', ['identifier', 'constant', 'preproc', 'special', 'type'])
-let g:opium_pairs = { '{': '}',
+let g:opium_pairs_additional = {
+	\ 'vim': {
+		\ 'if': 'endif',
+		\ 'function': 'endfunction',
+		\ 'while': 'endwhile',
+		\ 'for': 'endfor',
+		\ 'try': 'endtry'
+	\ },
+	\ 'sh' : {
+		\ 'if': '\<fi\>',
+		\ 'for': '\<done\>',
+		\ 'while': '\<done\>',
+		\ 'case': '\<esac\>'
+	\ }}
+let g:opium_pairs = {
+	\ '{': '}',
 	\ '[': ']',
-	\ '(': ')',
-	\ 'if': '\<fi\>',
-	\ 'for': '\<done\>',
-	\ 'while': '\<done\>',
-	\ 'case': '\<esac\>'
+	\ '(': ')'
 	\ }
+let g:opening_re = '\m[[({]'
 
 function s:highpat()
 	let s:synid_cache = {}
@@ -20,9 +34,8 @@ function s:highpat()
 	let stoplinebottom = line('w$')
 	let stoplinetop = line('w0')
 	let s:opiumhigh = deepcopy(g:opiumhigh)
-	let s:startingRe = '\m[[({]\|\<if\>\|\<while\>\|\<for\>\|\<case\>'
-	let inc = get(g:,'opium_point_enable') && getline('.')[col('.')-1] =~ s:startingRe ? 'c' : ''
-	call searchpair(s:startingRe, '','noop',inc.(len(g:opiumhigh) > 1 ? 'r' : '').'nbW', "getline('.')[col('.')-1] == 'n' ||"
+	let inc = get(g:,'opium_point_enable') && getline('.')[col('.')-1] =~ g:opening_re ? 'c' : ''
+	call searchpair(g:opening_re, '','noop',inc.(len(g:opiumhigh) > 1 ? 'r' : '').'nbW', "getline('.')[col('.')-1] == 'n' ||"
 			\ ."s:SynAt(line('.'),col('.')) =~? 'regex\\|comment\\|string' ||"
 			\ .'s:endpart('.stoplinebottom.')',stoplinetop,30)
 endfunction
@@ -71,7 +84,7 @@ function s:endpart(last_line)
 		while 1
 			let p = searchpairpos(s:search_opening, '', s:search_closing, 'W', "s:SynAt(line('.'),col('.')) =~? 'regex\\|comment\\|string'",
 				\ a:last_line,300)
-			if index(g:alreadyUsedCloses, line('.').':'.col('.')) == -1
+			if index(g:already_used_closes, line('.').':'.col('.')) == -1
 				break
 			endif
 		endwhile
@@ -83,7 +96,7 @@ function s:endpart(last_line)
 			call insert(opening_matchaddPosArgs, s:opening_len, 2)
 			call insert(p, s:closing_len, 2)
 			let w:opiums += [s:matchadd(remove(add(s:opiumhigh,s:opiumhigh[0]), 0), [opening_matchaddPosArgs, p])]
-			let g:alreadyUsedCloses += [p[0].':'.p[1]]
+			let g:already_used_closes += [p[0].':'.p[1]]
 		else
 			return 1
 		endif
@@ -93,11 +106,19 @@ function s:endpart(last_line)
 endfunction
 
 function OpiumInit()
-	" Since for and while use the same closing word the already used done must be marked as such
-	" if exists('g:alreadyUsedCloses')
-	"   unlet g:alreadyUsedCloses
-	" endif
-	let g:alreadyUsedCloses = []
+	if g:opium_pairs_setup && has_key(g:opium_pairs_additional, &filetype)
+		let g:opium_pairs = extend(g:opium_pairs, g:opium_pairs_additional[&filetype])
+		let g:opium_pairs_setup = 0
+		" Build opening word regex
+		for opening_word in keys(g:opium_pairs_additional[&filetype])
+			let g:opening_re = g:opening_re . '\|' . opening_word
+		endfor
+	endif
+  " Since for and while use the same closing word the already used done must be marked as such
+	if exists('g:already_used_closes')
+	  unlet g:already_used_closes
+	endif
+	let g:already_used_closes = []
 	let s:pos = getpos('.')[1:2] | let w:opiums = get(w:,'opiums',[])
 		\ | silent! call filter(w:opiums, 'matchdelete(v:val) > 0') | call s:highpat()
 endfunction
