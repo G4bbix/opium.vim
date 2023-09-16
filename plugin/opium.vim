@@ -4,7 +4,7 @@ endif
 
 let g:opium_pairs_setup = 1
 let g:opiumhigh = get(g:, 'opiumhigh', ['identifier', 'constant', 'preproc', 'special', 'type'])
-let g:opium_pairs_additional = {
+let g:opium_pairs_lang_specific = {
 	\ 'vim': {
 		\ 'if': 'endif',
 		\ 'function': 'endfunction',
@@ -106,11 +106,11 @@ function s:endpart(last_line)
 endfunction
 
 function OpiumInit()
-	if g:opium_pairs_setup && has_key(g:opium_pairs_additional, &filetype)
-		let g:opium_pairs = extend(g:opium_pairs, g:opium_pairs_additional[&filetype])
+	if g:opium_pairs_setup && has_key(g:opium_pairs_lang_specific, &filetype)
+		let g:opium_pairs = extend(g:opium_pairs, g:opium_pairs_lang_specific[&filetype])
 		let g:opium_pairs_setup = 0
 		" Build opening word regex
-		for opening_word in keys(g:opium_pairs_additional[&filetype])
+		for opening_word in keys(g:opium_pairs_lang_specific[&filetype])
 			let g:opening_re = g:opening_re . '\|' . opening_word
 		endfor
 	endif
