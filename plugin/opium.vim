@@ -2,8 +2,8 @@ if !has('reltime') || exists('*OpiumInit')
   finish
 endif
 let g:opiumhigh = get(g:, 'opiumhigh', ['identifier', 'constant', 'preproc', 'special', 'type'])
-let g:pairs = { '{': '}',
-  \ '\V[': '\V]',
+let g:opium_pairs = { '{': '}',
+  \ '[': ']',
   \ '(': ')',
   \ 'if': '\<fi\>',
   \ 'for': '\<done\>',
@@ -46,16 +46,30 @@ else
 endif
 
 function s:endpart(last_line)
-  let s:opening_word = expand('<cword>')
+	" if under the cursor is a opium pair of one char, set it as the opening word
+	let s:char_under_cursor = strcharpart(strpart(getline('.'), col('.') - 1), 0, 1)
+	if has_key(g:opium_pairs, s:char_under_cursor)
+		let s:opening_word = s:char_under_cursor
+	else
+		let s:opening_word = expand('<cword>')
+	endif
   " Prevent test alias for [ to not highlight
-  if s:opening_word ==# 'test' && getline('.')[col('.')-1] ==# '['
-    let s:opening_word = '\V['
-  endif
-  if has_key(g:pairs, s:opening_word)
+   if s:opening_word ==# 'test' && getline('.')[col('.')-1] ==# '['
+     let s:opening_word = '['
+   endif
+   if has_key(g:opium_pairs, s:opening_word)
     let opening_pos = [line('.'), col('.')]
 
+		if len(s:opening_word) ==# 1
+			let s:search_opening = '\V' . s:opening_word
+			let s:search_closing = '\V' . g:opium_pairs[s:opening_word]
+		else
+			let s:search_opening = s:opening_word
+			let s:search_closing = g:opium_pairs[s:opening_word]
+		endif
+
     while 1
-      let p = searchpairpos(s:opening_word, '', g:pairs[s:opening_word], 'W', "s:SynAt(line('.'),col('.')) =~? 'regex\\|comment\\|string'",
+      let p = searchpairpos(s:search_opening, '', s:search_closing, 'W', "s:SynAt(line('.'),col('.')) =~? 'regex\\|comment\\|string'",
         \ a:last_line,300)
       if index(g:alreadyUsedCloses, line('.').':'.col('.')) == -1
         break
@@ -68,7 +82,7 @@ function s:endpart(last_line)
         let s:opening_len = 1
       else
         let s:opening_len = len(s:opening_word)
-        let s:closing_len = len(substitute(g:pairs[s:opening_word], '\\<\([a-z]\+\)\\>', '\1', 'g'))
+        let s:closing_len = len(substitute(g:opium_pairs[s:opening_word], '\\<\([a-z]\+\)\\>', '\1', 'g'))
       endif
       let opening_matchaddPosArgs = opening_pos
       call insert(opening_matchaddPosArgs, s:opening_len, 2)
