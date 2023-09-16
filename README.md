@@ -47,7 +47,7 @@ included with vim, `let g:opium_point_enable = 1`
 - case - esac
 
 ### vimscript
-- if - endfi
+- if - endif
 - for - endfor
 - while - endwhile
 - function - endfunction
