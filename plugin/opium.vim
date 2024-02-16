@@ -36,8 +36,12 @@ function s:highpat()
 	let s:opiumhigh = deepcopy(g:opiumhigh)
 	let inc = get(g:,'opium_point_enable') && getline('.')[col('.')-1] =~ g:opening_re ? 'c' : ''
 	call searchpair(g:opening_re, '','noop',inc.(len(g:opiumhigh) > 1 ? 'r' : '').'nbW', "getline('.')[col('.')-1] == 'n' ||"
-			\ ."s:SynAt(line('.'),col('.')) =~? 'regex\\|comment\\|string' ||"
-			\ .'s:endpart('.stoplinebottom.')',stoplinetop,30)
+			\ .'s:ExcludeSyn() || s:endpart('.stoplinebottom.')',stoplinetop,30)
+endfunction
+
+function s:ExcludeSyn()
+let s:excludes = ['regex', 'comment', 'string', 'shDoubleQuote', 'shComment', 'shSingleQuote']
+	return index(s:excludes, s:SynAt(line('.'),col('.'))) >= 0
 endfunction
 
 function s:SynAt(l, c)
@@ -72,7 +76,6 @@ function s:endpart(last_line)
 	endif
 	if has_key(g:opium_pairs, s:opening_word)
 		let opening_pos = [line('.'), col('.')]
-
 		if len(s:opening_word) ==# 1
 			let s:search_opening = '\V' . s:opening_word
 			let s:search_closing = '\V' . g:opium_pairs[s:opening_word]
@@ -82,10 +85,14 @@ function s:endpart(last_line)
 		endif
 
 		while 1
-			let p = searchpairpos(s:search_opening, '', s:search_closing, 'W', "s:SynAt(line('.'),col('.')) =~? 'regex\\|comment\\|string'",
+			let p = searchpairpos(s:search_opening, '', s:search_closing, 'W', 's:ExcludeSyn()',
 				\ a:last_line,300)
 			if index(g:already_used_closes, line('.').':'.col('.')) == -1
 				break
+			endif
+			" Break if end is reached
+			if line('.') == line('w$')
+				return
 			endif
 		endwhile
 
@@ -114,9 +121,9 @@ function OpiumInit()
 			let g:opening_re = g:opening_re . '\|' . opening_word
 		endfor
 	endif
-  " Since for and while use the same closing word the already used done must be marked as such
+	" Since for and while use the same closing word the already used done must be marked as such
 	if exists('g:already_used_closes')
-	  unlet g:already_used_closes
+		unlet g:already_used_closes
 	endif
 	let g:already_used_closes = []
 	let s:pos = getpos('.')[1:2] | let w:opiums = get(w:,'opiums',[])
