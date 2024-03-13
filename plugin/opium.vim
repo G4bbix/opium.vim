@@ -17,6 +17,13 @@ let g:opium_pairs_lang_specific = {
 		\ 'for': '\<done\>',
 		\ 'while': '\<done\>',
 		\ 'case': '\<esac\>'
+	\ },
+	\ 'lua' : {
+		\ 'function': 'end',
+		\ 'if': 'end',
+		\ 'for': 'end',
+		\ 'while': 'end',
+		\ 'repeat': 'until',
 	\ }}
 let g:opium_pairs = {
 	\ '{': '}',
@@ -40,8 +47,15 @@ function s:highpat()
 endfunction
 
 function s:ExcludeSyn()
-let s:excludes = ['regex', 'comment', 'string', 'shDoubleQuote', 'shComment', 'shSingleQuote']
-	return index(s:excludes, s:SynAt(line('.'),col('.'))) >= 0
+	if exists(':TSUpdate')
+		let g:opium_symbol_row = line('.')
+		let g:opium_symbol_col = col('.')
+		lua OpiumCheckExcludeSymbol()
+		return g:opium_symbol_res
+	else
+		let s:excludes = ['regex', 'comment', 'string', 'shDoubleQuote', 'shComment', 'shSingleQuote']
+		return index(s:excludes, s:SynAt(line('.'),col('.'))) >= 0
+	endif
 endfunction
 
 function s:SynAt(l, c)
